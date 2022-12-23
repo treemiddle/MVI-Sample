@@ -33,6 +33,7 @@ class HomeViewModel @AssistedInject constructor(
     fun setEvent(event: HomeEvent) = viewModelScope.launch { _event.emit(value = event) }
 
     private fun initialized() {
+        val random = (0..9).random()
         viewModelScope.launch {
             setState { copy(isLoading = true) }
             delay(timeMillis = 3000)
@@ -45,7 +46,8 @@ class HomeViewModel @AssistedInject constructor(
                                 HomeModel(
                                     index = it,
                                     name = "Device Name: $it",
-                                    serialNumber = "Serial Number: $it"
+                                    serialNumber = "Serial Number: $it",
+                                    isActivated = it == random
                                 )
                             )
                         }

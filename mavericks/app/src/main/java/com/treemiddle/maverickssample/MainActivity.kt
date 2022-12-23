@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.ui.Modifier
+import com.treemiddle.maverickssample.screen.HomeScreen
 import com.treemiddle.maverickssample.ui.theme.MavericksSampleTheme
 import dagger.hilt.android.AndroidEntryPoint
 

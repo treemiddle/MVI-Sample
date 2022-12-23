@@ -1,4 +1,4 @@
-package com.treemiddle.maverickssample
+package com.treemiddle.maverickssample.screen
 
 import android.widget.Toast
 import androidx.compose.foundation.background
@@ -23,6 +23,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import com.airbnb.mvrx.compose.collectAsState
 import com.airbnb.mvrx.compose.mavericksViewModel
+import com.treemiddle.maverickssample.HomeState
+import com.treemiddle.maverickssample.HomeViewModel
 import com.treemiddle.maverickssample.ui.theme.MavericksSampleTheme
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
@@ -74,6 +76,7 @@ fun HomeContent(
                 name = deviceModel.name,
                 serialNumber = deviceModel.serialNumber,
                 devcieIndex = deviceModel.index,
+                isActivated = deviceModel.isActivated,
                 event = event
             )
         }
@@ -134,6 +137,7 @@ fun DeviceInformation(
     name: String,
     serialNumber: String,
     devcieIndex: Int,
+    isActivated: Boolean,
     event: (HomeViewModel.HomeEvent) -> Unit
 ) {
     Row(
@@ -152,14 +156,27 @@ fun DeviceInformation(
         }
 
         Text(
-            modifier = modifier.clickable {
-                event(
-                    HomeViewModel.HomeEvent.DeleteDevcieClicked(
-                        devcieIndex
+            modifier = if (isActivated) {
+                modifier
+            } else {
+                modifier.clickable {
+                    event(
+                        HomeViewModel.HomeEvent.DeleteDevcieClicked(
+                            devcieIndex
+                        )
                     )
-                )
+                }
             },
-            text = "삭제하기"
+            text = if (isActivated) {
+                "현재 접속 기기"
+            } else {
+                "삭제하기"
+            },
+            color = if (isActivated) {
+                Color.Blue
+            } else {
+                Color.Black
+            }
         )
     }
 }
@@ -178,8 +195,10 @@ fun DeviceInformationPreview() {
     DeviceInformation(
         name = "test name",
         serialNumber = "test number",
-        devcieIndex = 0
-    ) { }
+        devcieIndex = 0,
+        isActivated = false,
+        event = {  }
+    )
 }
 
 @Preview
