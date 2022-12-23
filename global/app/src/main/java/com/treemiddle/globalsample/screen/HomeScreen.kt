@@ -1,8 +1,11 @@
 package com.treemiddle.globalsample.screen
 
 import android.widget.Toast
-import androidx.compose.foundation.*
+import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
@@ -23,7 +26,6 @@ import com.treemiddle.globalsample.ui.theme.musinsaColor
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.onEach
-import kotlinx.coroutines.launch
 
 @Composable
 fun HomeScreen(
@@ -68,7 +70,8 @@ fun HomeContent(
                 name = deviceModel.name,
                 serialNumber = deviceModel.serialNumber,
                 event = event,
-                devcieIndex = deviceModel.index
+                devcieIndex = deviceModel.index,
+                isActivated = deviceModel.isActivated
             )
         }
     }
@@ -126,6 +129,7 @@ fun DeviceInformation(
     name: String,
     serialNumber: String,
     devcieIndex: Int,
+    isActivated: Boolean,
     event: (HomeContract.HomeEvent) -> Unit
 ) {
     Row(
@@ -147,8 +151,23 @@ fun DeviceInformation(
         }
 
         Text(
-            modifier = modifier.clickable { event(HomeContract.HomeEvent.DeleteDevcieClicked(devcieIndex)) },
-            text = "삭제하기"
+            modifier = if (isActivated) {
+                modifier
+            } else {
+                modifier.clickable {
+                    event(HomeContract.HomeEvent.DeleteDevcieClicked(devcieIndex))
+                }
+            },
+            text = if (isActivated) {
+                "현재 접속 기기"
+            } else {
+                "삭제하기"
+            },
+            color = if (isActivated) {
+                Color.Blue
+            } else {
+                Color.Black
+            }
         )
     }
 }
@@ -170,7 +189,8 @@ fun DeviceInformationPreview() {
         name = "test name",
         serialNumber = "test number",
         event = { },
-        devcieIndex = 0
+        devcieIndex = 0,
+        isActivated = false
     )
 }
 

@@ -23,7 +23,7 @@ abstract class BaseViewModel<Event : UiEvent, State : UiState, Effect : UiEffect
         subscribeToEvents()
     }
 
-    fun setEvent(event: Event) = viewModelScope.launch { _event.emit(event) }
+    fun setEvent(event: Event) = viewModelScope.launch { _event.emit(value = event) }
 
     abstract fun createInitialState(): State
 
@@ -33,11 +33,11 @@ abstract class BaseViewModel<Event : UiEvent, State : UiState, Effect : UiEffect
         _uiState.update { uiState.value.reducer() }
 
     protected fun setEffect(builder: () -> Effect) =
-        viewModelScope.launch { _effect.send(builder()) }
+        viewModelScope.launch { _effect.send(element = builder()) }
 
     private fun subscribeToEvents() = viewModelScope.launch {
         _event.collect {
-            handleEvents(it)
+            handleEvents(event = it)
         }
     }
 }

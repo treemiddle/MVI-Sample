@@ -26,27 +26,29 @@ class HomeViewModel @Inject constructor() :
             showToast()
         }
         is HomeContract.HomeEvent.DeleteDevcieClicked -> {
-            showDialog(event.devcieIndex)
+            showDialog(index = event.devcieIndex)
         }
         is HomeContract.HomeEvent.DialogDeletedClicked -> {
-            removeDeviceModel(event.deviceIndex)
+            removeDeviceModel(deviceIndex = event.deviceIndex)
         }
     }
 
     private fun initialed() {
+        val random = (0..9).random()
         viewModelScope.launch {
             setState { copy(isLoading = true) }
-            delay(3000)
+            delay(timeMillis = 3000)
             setState {
                 copy(
                     isLoading = false,
                     deviceList = mutableListOf<DeviceModel>().apply {
-                        repeat(20) {
+                        repeat(times = 20) {
                             add(
                                 DeviceModel(
                                     index = it,
                                     name = "Device Name: $it",
-                                    serialNumber = "Serial Number: $it"
+                                    serialNumber = "Serial Number: $it",
+                                    isActivated = it == random
                                 )
                             )
                         }
@@ -61,7 +63,7 @@ class HomeViewModel @Inject constructor() :
     }
 
     private fun showDialog(index: Int) {
-        setEffect { HomeContract.HomeEffect.Dialog(index) }
+        setEffect { HomeContract.HomeEffect.Dialog(deviceIndex = index) }
     }
 
     private fun removeDeviceModel(deviceIndex: Int) {
