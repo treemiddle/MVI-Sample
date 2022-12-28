@@ -10,7 +10,6 @@ import androidx.compose.material.CircularProgressIndicator
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -21,63 +20,56 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import com.airbnb.mvrx.Loading
 import com.airbnb.mvrx.compose.collectAsState
 import com.airbnb.mvrx.compose.mavericksViewModel
-import com.treemiddle.maverickssample.HomeState
 import com.treemiddle.maverickssample.HomeViewModel
 import com.treemiddle.maverickssample.ui.theme.MavericksSampleTheme
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.onEach
 
 @Composable
 fun HomeScreen() {
-    val viewModel: HomeViewModel = mavericksViewModel()
-    val state = viewModel.collectAsState()
-    val effect = viewModel.homeEffect
-
-    HomeContent(
-        state = state.value,
-        effect = effect,
-        event = { viewModel.setEvent(it) }
-    )
+    HomeContent()
 }
 
 @Composable
-fun HomeContent(
-    state: HomeState,
-    effect: Flow<HomeViewModel.HomeEffect>?,
-    event: (HomeViewModel.HomeEvent) -> Unit
-) {
+fun HomeContent() {
+    val viewModel: HomeViewModel = mavericksViewModel()
+    val state = viewModel.collectAsState().value
+
     val scroll = rememberScrollState()
     val isShowDialog = remember { mutableStateOf(false) }
     val deviceIndex = remember { mutableStateOf(0) }
     val context = LocalContext.current
 
-    LaunchedEffect("SIDE_EFFECTS_KEY") {
-        effect?.onEach {
-            when (it) {
-                HomeViewModel.HomeEffect.ShowToast -> {
-                    Toast.makeText(context, "toast", Toast.LENGTH_SHORT).show()
-                }
-                is HomeViewModel.HomeEffect.Dialog -> {
-                    deviceIndex.value = it.deviceIndex
-                    isShowDialog.value = true
-                }
-            }
-        }?.collect()
+    if (state.fetchRequest is Loading) {
+        Box(
+            modifier = Modifier.fillMaxSize(),
+            contentAlignment = Alignment.Center
+        ) {
+            CircularProgressIndicator(color = Color.Green)
+        }
     }
 
-
     Column(modifier = Modifier.verticalScroll(scroll)) {
-        Header(event = event)
+        Header(
+            totalDeviceCount = state.totalDeviceCount,
+            onTitleClicked = {
+                Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+            }
+        )
         state.deviceList.forEachIndexed { _, deviceModel ->
             DeviceInformation(
                 name = deviceModel.name,
                 serialNumber = deviceModel.serialNumber,
                 devcieIndex = deviceModel.index,
                 isActivated = deviceModel.isActivated,
-                event = event
+                onDeviceInformationClicked = {
+                    Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                },
+                onDeleteClicked = {
+                    deviceIndex.value = it
+                    isShowDialog.value = true
+                }
             )
         }
     }
@@ -92,7 +84,7 @@ fun HomeContent(
                     .background(Color.Gray)
                     .clickable {
                         isShowDialog.value = false
-                        event(HomeViewModel.HomeEvent.DialogDeletedClicked(deviceIndex.value))
+                        viewModel.removeDeviceModel(deviceIndex.value)
                     },
                 contentAlignment = Alignment.Center
             ) {
@@ -100,31 +92,23 @@ fun HomeContent(
             }
         }
     }
-
-    if (state.isLoading) {
-        Box(
-            modifier = Modifier.fillMaxSize(),
-            contentAlignment = Alignment.Center
-        ) {
-            CircularProgressIndicator(color = Color.Green)
-        }
-    }
 }
 
 @Composable
-fun Header(event: (HomeViewModel.HomeEvent) -> Unit) {
-    // NOTE : 필요에 따라 사용할 수도 있음
-    // val viewModel: HomeViewModel = mavericksViewModel()
+fun Header(
+    totalDeviceCount: Int,
+    onTitleClicked: (String) -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color.LightGray)
             .height(56.dp)
-            .clickable { event(HomeViewModel.HomeEvent.TitleSelected) },
+            .clickable { onTitleClicked("타이틀 클릭") },
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "자동 로그인 디바이스 관리",
+            text = "Mavericks 로그인 디바이스 관리: $totalDeviceCount",
             fontWeight = FontWeight.Bold,
             color = Color.Black
         )
@@ -138,7 +122,8 @@ fun DeviceInformation(
     serialNumber: String,
     devcieIndex: Int,
     isActivated: Boolean,
-    event: (HomeViewModel.HomeEvent) -> Unit
+    onDeviceInformationClicked: (String) -> Unit,
+    onDeleteClicked: (Int) -> Unit
 ) {
     Row(
         modifier = modifier
@@ -149,7 +134,7 @@ fun DeviceInformation(
         Column(
             modifier = modifier
                 .weight(1f)
-                .clickable { event(HomeViewModel.HomeEvent.DeviceInformationSelected) }
+                .clickable { onDeviceInformationClicked(name) }
         ) {
             Text(text = "기종: $name")
             Text(text = "고유번호: $serialNumber")
@@ -159,13 +144,7 @@ fun DeviceInformation(
             modifier = if (isActivated) {
                 modifier
             } else {
-                modifier.clickable {
-                    event(
-                        HomeViewModel.HomeEvent.DeleteDevcieClicked(
-                            devcieIndex
-                        )
-                    )
-                }
+                modifier.clickable { onDeleteClicked(devcieIndex) }
             },
             text = if (isActivated) {
                 "현재 접속 기기"
@@ -185,7 +164,7 @@ fun DeviceInformation(
 @Composable
 fun HeaderPreview() {
     Surface {
-        Header { }
+        Header(0, {})
     }
 }
 
@@ -197,7 +176,8 @@ fun DeviceInformationPreview() {
         serialNumber = "test number",
         devcieIndex = 0,
         isActivated = false,
-        event = {  }
+        onDeleteClicked = {},
+        onDeviceInformationClicked = {}
     )
 }
 

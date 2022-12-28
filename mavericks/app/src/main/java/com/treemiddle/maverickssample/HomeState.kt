@@ -1,9 +1,12 @@
 package com.treemiddle.maverickssample
 
+import com.airbnb.mvrx.Async
 import com.airbnb.mvrx.MavericksState
-import com.treemiddle.maverickssample.model.HomeModel
+import com.airbnb.mvrx.Uninitialized
+import com.treemiddle.maverickssample.model.DeviceModel
 
 data class HomeState(
-    val isLoading: Boolean = false,
-    val deviceList: List<HomeModel> = emptyList()
+    val fetchRequest: Async<UseCaseModel> = Uninitialized,
+    val deviceList: List<DeviceModel> = emptyList(),
+    val totalDeviceCount: Int = 0
 ) : MavericksState
