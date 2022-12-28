@@ -9,26 +9,43 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class HomeViewModel @Inject constructor() :
+class HomeViewModel @Inject constructor(homeUseCase: HomeUseCase) :
     BaseViewModel<HomeContract.HomeEvent, HomeContract.HomeState, HomeContract.HomeEffect>() {
 
     init {
-        initialed()
+        setState { copy(isLoading = true) }
+
+        viewModelScope.launch {
+            delay(3000)
+            when (val result = homeUseCase(params = Unit)) {
+                is Result.Success -> {
+                    setState {
+                        copy(
+                            isLoading = false,
+                            deviceList = result.data.list
+                        )
+                    }
+                }
+                else -> {
+                    // error handling
+                }
+            }
+        }
     }
 
     override fun createInitialState(): HomeContract.HomeState = HomeContract.HomeState()
 
     override fun handleEvents(event: HomeContract.HomeEvent) = when (event) {
-        is HomeContract.HomeEvent.TitleSelected -> {
+        is HomeContract.HomeEvent.TitleClick -> {
             showToast()
         }
-        is HomeContract.HomeEvent.DeviceInformationSelected -> {
-            showToast()
+        is HomeContract.HomeEvent.DeviceInformationClick -> {
+            showToast(event.deviceName)
         }
-        is HomeContract.HomeEvent.DeleteDevcieClicked -> {
+        is HomeContract.HomeEvent.DeleteDevcieClick -> {
             showDialog(index = event.devcieIndex)
         }
-        is HomeContract.HomeEvent.DialogDeletedClicked -> {
+        is HomeContract.HomeEvent.DialogDeleteClick -> {
             removeDeviceModel(deviceIndex = event.deviceIndex)
         }
     }
@@ -58,8 +75,8 @@ class HomeViewModel @Inject constructor() :
         }
     }
 
-    private fun showToast() {
-        setEffect { HomeContract.HomeEffect.ShowToast }
+    private fun showToast(message: String = "") {
+        setEffect { HomeContract.HomeEffect.ShowToast(message) }
     }
 
     private fun showDialog(index: Int) {

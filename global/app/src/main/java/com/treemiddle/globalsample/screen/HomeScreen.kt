@@ -52,8 +52,12 @@ fun HomeContent(
     LaunchedEffect("SIDE_EFFECTS_KEY") {
         effect?.onEach {
             when (it) {
-                HomeContract.HomeEffect.ShowToast -> {
-                    Toast.makeText(context, "toast", Toast.LENGTH_SHORT).show()
+                is HomeContract.HomeEffect.ShowToast -> {
+                    Toast.makeText(
+                        context,
+                        it.message.ifBlank { "타이틀 클릭" },
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
                 is HomeContract.HomeEffect.Dialog -> {
                     deviceIndex.value = it.deviceIndex
@@ -86,7 +90,7 @@ fun HomeContent(
                     .background(Color.Gray)
                     .clickable {
                         isShowDialog.value = false
-                        event(HomeContract.HomeEvent.DialogDeletedClicked(deviceIndex.value))
+                        event(HomeContract.HomeEvent.DialogDeleteClick(deviceIndex.value))
                     },
                 contentAlignment = Alignment.Center
             ) {
@@ -112,7 +116,7 @@ fun Header(event: (HomeContract.HomeEvent) -> Unit) {
             .fillMaxWidth()
             .background(Color.LightGray)
             .height(56.dp)
-            .clickable { event(HomeContract.HomeEvent.TitleSelected) },
+            .clickable { event(HomeContract.HomeEvent.TitleClick) },
         contentAlignment = Alignment.Center
     ) {
         Text(
@@ -143,7 +147,7 @@ fun DeviceInformation(
             modifier = modifier
                 .weight(1f)
                 .clickable {
-                    event(HomeContract.HomeEvent.DeviceInformationSelected)
+                    event(HomeContract.HomeEvent.DeviceInformationClick(name))
                 }
         ) {
             Text(text = "기종: $name")
@@ -155,7 +159,7 @@ fun DeviceInformation(
                 modifier
             } else {
                 modifier.clickable {
-                    event(HomeContract.HomeEvent.DeleteDevcieClicked(devcieIndex))
+                    event(HomeContract.HomeEvent.DeleteDevcieClick(devcieIndex))
                 }
             },
             text = if (isActivated) {
