@@ -15,7 +15,8 @@ class HomeContract {
 
     data class HomeState(
         val isLoading: Boolean = false,
-        val deviceList: List<DeviceModel> = emptyList()
+        val deviceList: List<DeviceModel> = emptyList(),
+        val totalDeviceCount: Int = 0
     ) : UiState
 
     sealed class HomeEffect : UiEffect {

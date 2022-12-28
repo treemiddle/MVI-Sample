@@ -68,7 +68,7 @@ fun HomeContent(
     }
 
     Column(modifier = Modifier.verticalScroll(scroll)) {
-        Header(event)
+        Header(state.totalDeviceCount, event)
         state.deviceList.forEachIndexed { _, deviceModel ->
             DeviceInformation(
                 name = deviceModel.name,
@@ -110,7 +110,10 @@ fun HomeContent(
 }
 
 @Composable
-fun Header(event: (HomeContract.HomeEvent) -> Unit) {
+fun Header(
+    totalDeviceCount: Int,
+    event: (HomeContract.HomeEvent) -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -120,7 +123,7 @@ fun Header(event: (HomeContract.HomeEvent) -> Unit) {
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "자동 로그인 디바이스 관리",
+            text = "자동 로그인 디바이스 관리: $totalDeviceCount",
             fontWeight = FontWeight.Bold,
             color = Color.Black
         )
@@ -180,9 +183,10 @@ fun DeviceInformation(
 @Composable
 fun HeaderPreview() {
     Surface {
-        Header {
-
-        }
+        Header(
+            totalDeviceCount = 0,
+            event = {}
+        )
     }
 }
 

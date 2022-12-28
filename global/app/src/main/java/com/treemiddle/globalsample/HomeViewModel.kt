@@ -22,7 +22,8 @@ class HomeViewModel @Inject constructor(homeUseCase: HomeUseCase) :
                     setState {
                         copy(
                             isLoading = false,
-                            deviceList = result.data.list
+                            deviceList = result.data.list,
+                            totalDeviceCount = result.data.list.size
                         )
                     }
                 }
