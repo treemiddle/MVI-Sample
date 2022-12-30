@@ -2,7 +2,7 @@ package com.treemiddle.orbitsample
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.treemiddle.orbitsample.model.DeviceModel
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
@@ -12,61 +12,58 @@ import org.orbitmvi.orbit.syntax.simple.intent
 import org.orbitmvi.orbit.syntax.simple.postSideEffect
 import org.orbitmvi.orbit.syntax.simple.reduce
 import org.orbitmvi.orbit.viewmodel.container
+import javax.inject.Inject
 
-class HomeViewModel : ViewModel(), ContainerHost<HomeState, HomeSideEffect> {
+@HiltViewModel
+class HomeViewModel @Inject constructor(
+    private val homeUseCase: HomeUseCase
+) : ViewModel(), ContainerHost<HomeState, HomeSideEffect> {
 
     override val container: Container<HomeState, HomeSideEffect> = container(HomeState())
 
     private val _event = MutableSharedFlow<HomeEvent>()
 
     init {
-        initialed()
         subscribeToEvents()
-    }
-
-    fun setEvent(event: HomeEvent) = viewModelScope.launch { _event.emit(value = event) }
-
-    private fun initialed() {
-        val random = (0..9).random()
 
         intent {
             reduce { state.copy(isLoading = true) }
-            delay(timeMillis = 3000)
-            reduce {
-                state.copy(
-                    isLoading = false,
-                    deviceList = mutableListOf<DeviceModel>().apply {
-                        repeat(times = 20) {
-                            add(
-                                DeviceModel(
-                                    index = it,
-                                    name = "Device Name: $it",
-                                    serialNumber = "Serial Number: $it",
-                                    isActivated = it == random
-                                )
-                            )
-                        }
+
+            delay(3000)
+            when (val result = homeUseCase(params = Unit)) {
+                is Result.Success -> {
+                    reduce {
+                        state.copy(
+                            isLoading = false,
+                            deviceList = result.data.list,
+                            totalDeviceCount = result.data.list.size
+                        )
                     }
-                )
+                }
+                else -> {
+                    // error handling
+                }
             }
         }
     }
+
+    fun setEvent(event: HomeEvent) = viewModelScope.launch { _event.emit(value = event) }
 
     private fun subscribeToEvents() = viewModelScope.launch {
         _event.collect { handleEvents(event = it) }
     }
 
     private fun handleEvents(event: HomeEvent) = when (event) {
-        is HomeEvent.TitleSelected -> {
-            setEffect(HomeSideEffect.ShowToast)
+        is HomeEvent.TitleClick -> {
+            setEffect(HomeSideEffect.ShowToast(""))
         }
-        is HomeEvent.DeviceInformationSelected -> {
-            setEffect(HomeSideEffect.ShowToast)
+        is HomeEvent.DeviceInformationClick -> {
+            setEffect(HomeSideEffect.ShowToast(event.deviceName))
         }
-        is HomeEvent.DeleteDevcieClicked -> {
+        is HomeEvent.DeleteDeviceClick -> {
             setEffect(HomeSideEffect.Dialog(deviceIndex = event.devcieIndex))
         }
-        is HomeEvent.DialogDeletedClicked -> {
+        is HomeEvent.DialogDelteClick -> {
             removeDeviceModel(deviceIndex = event.deviceIndex)
         }
     }
@@ -82,9 +79,9 @@ class HomeViewModel : ViewModel(), ContainerHost<HomeState, HomeSideEffect> {
     }
 
     sealed class HomeEvent {
-        object TitleSelected : HomeEvent()
-        object DeviceInformationSelected : HomeEvent()
-        data class DeleteDevcieClicked(val devcieIndex: Int) : HomeEvent()
-        data class DialogDeletedClicked(val deviceIndex: Int) : HomeEvent()
+        object TitleClick : HomeEvent()
+        data class DeviceInformationClick(val deviceName: String) : HomeEvent()
+        data class DeleteDeviceClick(val devcieIndex: Int) : HomeEvent()
+        data class DialogDelteClick(val deviceIndex: Int) : HomeEvent()
     }
 }

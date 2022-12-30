@@ -20,20 +20,19 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.treemiddle.orbitsample.HomeSideEffect
 import com.treemiddle.orbitsample.HomeViewModel
 import org.orbitmvi.orbit.compose.collectAsState
 import org.orbitmvi.orbit.compose.collectSideEffect
 
 @Composable
-fun HomeScreen(viewModel: HomeViewModel) {
+fun HomeScreen(viewModel: HomeViewModel = hiltViewModel()) {
     HomeContent(viewModel)
 }
 
 @Composable
-fun HomeContent(
-    viewModel: HomeViewModel
-) {
+fun HomeContent(viewModel: HomeViewModel) {
     val state = viewModel.collectAsState()
     val scroll = rememberScrollState()
     val context = LocalContext.current
@@ -42,8 +41,12 @@ fun HomeContent(
 
     viewModel.collectSideEffect {
         when (it) {
-            HomeSideEffect.ShowToast -> {
-                Toast.makeText(context, "toast", Toast.LENGTH_SHORT).show()
+            is HomeSideEffect.ShowToast -> {
+                Toast.makeText(
+                    context,
+                    it.message.ifBlank { "타이틀 클릭" },
+                    Toast.LENGTH_SHORT
+                ).show()
             }
             is HomeSideEffect.Dialog -> {
                 deviceIndex.value = it.deviceIndex
@@ -53,7 +56,7 @@ fun HomeContent(
     }
 
     Column(modifier = Modifier.verticalScroll(scroll)) {
-        Header(viewModel::setEvent)
+        Header(state.value.totalDeviceCount, viewModel::setEvent)
         state.value.deviceList.forEachIndexed { _, deviceModel ->
             DeviceInformation(
                 name = deviceModel.name,
@@ -75,7 +78,7 @@ fun HomeContent(
                     .background(Color.Gray)
                     .clickable {
                         isShowDialog.value = false
-                        viewModel.setEvent(HomeViewModel.HomeEvent.DialogDeletedClicked(deviceIndex.value))
+                        viewModel.setEvent(HomeViewModel.HomeEvent.DialogDelteClick(deviceIndex.value))
                     },
                 contentAlignment = Alignment.Center
             ) {
@@ -95,17 +98,20 @@ fun HomeContent(
 }
 
 @Composable
-fun Header(event: (HomeViewModel.HomeEvent) -> Unit) {
+fun Header(
+    totalDeviceCount: Int,
+    event: (HomeViewModel.HomeEvent) -> Unit
+) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
             .background(Color.LightGray)
             .height(56.dp)
-            .clickable { event(HomeViewModel.HomeEvent.TitleSelected) },
+            .clickable { event(HomeViewModel.HomeEvent.TitleClick) },
         contentAlignment = Alignment.Center
     ) {
         Text(
-            text = "자동 로그인 디바이스 관리",
+            text = "Orbit 자동 로그인 디바이스 관리: $totalDeviceCount",
             fontWeight = FontWeight.Bold,
             color = Color.Black
         )
@@ -131,7 +137,7 @@ fun DeviceInformation(
             modifier = modifier
                 .weight(1f)
                 .clickable {
-                    event(HomeViewModel.HomeEvent.DeviceInformationSelected)
+                    event(HomeViewModel.HomeEvent.DeviceInformationClick(name))
                 }
         ) {
             Text(text = "기종: $name")
@@ -143,7 +149,7 @@ fun DeviceInformation(
                 modifier
             } else {
                 modifier.clickable {
-                    event(HomeViewModel.HomeEvent.DeleteDevcieClicked(devcieIndex))
+                    event(HomeViewModel.HomeEvent.DeleteDeviceClick(devcieIndex))
                 }
             },
             text = if (isActivated) {
@@ -164,9 +170,10 @@ fun DeviceInformation(
 @Composable
 fun HeaderPreview() {
     Surface {
-        Header {
-
-        }
+        Header(
+            0,
+            {}
+        )
     }
 }
 
